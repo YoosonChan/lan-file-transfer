@@ -1,62 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { deleteAllFiles, deleteDir, deleteFile, downloadAllFiles, downloadDir, downloadFile, getFileList, uploadFile } from './api';
 import { downloadFileFromResponse } from './utils/download';
+import { FileItem } from './types';
 
-interface FileInfo {
-  name: string
-  path: string
-  type: 'directory' | 'file'
-  size: number
-  createTime: Date
-  children?: FileInfo[]
-}
-
-const files = ref<File[]>([])
-const uploadStatus = ref('')
-const serverUrl = ref(`http://${window.location.hostname}:3000/api`)
-const fileList = ref<FileInfo[]>([])
-
-const handleFileSelect = (event: Event) => {
-  const input = event.target as HTMLInputElement
-  if (input.files) {
-    files.value = Array.from(input.files)
-  }
-}
-
-const uploadFiles = async () => {
-  if (files.value.length === 0) {
-    uploadStatus.value = '请选择文件'
-    return
-  }
-
-  const formData = new FormData()
-  files.value.forEach(file => {
-    formData.append('files', file)
-  })
-
+// 文件列表
+const fileList = ref<FileItem[]>([])
+const getList = async () => {
   try {
-    uploadStatus.value = '正在上传...'
-    const response = await fetch(`${serverUrl.value}/upload`, {
-      method: 'POST',
-      body: formData
-    })
-
-    if (response.ok) {
-      uploadStatus.value = '上传成功！'
-      files.value = []
-      await fetchFileList()
-    } else {
-      uploadStatus.value = '上传失败'
-    }
-  } catch (error) {
-    uploadStatus.value = '上传出错：' + error
-  }
-}
-
-// 获取文件列表
-const fetchFileList = async () => {
-  try {
-    const response = await fetch(`${serverUrl.value}/files`)
+    const response = await getFileList()
     if (response.ok) {
       fileList.value = await response.json()
     }
@@ -65,23 +17,73 @@ const fetchFileList = async () => {
   }
 }
 
-// 下载单个文件
-const downloadFile = async (filePath: string) => {
-  downloadFileFromResponse(await fetch(`${serverUrl.value}/download?path=${encodeURIComponent(filePath)}`))
+// 文件上传
+const files = ref<File[]>([])
+const uploadStatus = ref('')
+const handleFileSelect = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  if (input.files) {
+    files.value = Array.from(input.files)
+  }
 }
+const handleUploadFiles = async () => {
+  if (files.value.length === 0) {
+    uploadStatus.value = '请选择文件'
+    return
+  }
+  const formData = new FormData()
+  files.value.forEach(file => {
+    formData.append('files', file)
+  })
+  try {
+    uploadStatus.value = '正在上传...'
+    const response = await uploadFile(formData)
+    if (response.ok) {
+      uploadStatus.value = '上传成功！'
+      files.value = []
+      await getList()
+    } else {
+      uploadStatus.value = '上传失败'
+    }
+  } catch (error) {
+    uploadStatus.value = '上传出错：' + error
+  }
+}
+
+
+// 下载单个文件
+const handleDownloadFile = async (filePath: string) => {
+  try {
+    downloadFileFromResponse(await downloadFile(filePath))
+  } catch (error) {
+    console.error('下载文件失败：', error)
+  }
+}
+
 // 下载单个文件夹
-const downloadDir = async (filePath: string) => {
-  downloadFileFromResponse(await fetch(`${serverUrl.value}/downloadDir?path=${encodeURIComponent(filePath)}`))
+const handleDownloadDir = async (filePath: string) => {
+  try {
+    downloadFileFromResponse(await downloadDir(filePath))
+  } catch (error) {
+    console.error('下载文件夹失败：', error)
+  }
+}
+
+// 下载所有文件
+const handleDownloadAllFiles = async () => {
+  try {
+    downloadFileFromResponse(await downloadAllFiles())
+  } catch (error) {
+    console.error('下载所有文件失败：', error)
+  }
 }
 
 // 删除单个文件
-const deleteFile = async (filePath: string) => {
+const handleDeleteFile = async (filePath: string) => {
   try {
-    const response = await fetch(`${serverUrl.value}/delete?path=${encodeURIComponent(filePath)}`, {
-      method: 'DELETE'
-    })
+    const response = await deleteFile(filePath)
     if (response.ok) {
-      await fetchFileList()
+      await getList()
     }
   } catch (error) {
     console.error('删除文件失败：', error)
@@ -89,44 +91,23 @@ const deleteFile = async (filePath: string) => {
 }
 
 // 删除单个文件夹
-const deleteDir = async (filePath: string) => {
+const handleDeleteDir = async (filePath: string) => {
   try {
-    const response = await fetch(`${serverUrl.value}/deleteDir?path=${encodeURIComponent(filePath)}`, {
-      method: 'DELETE'
-    })
+    const response = await deleteDir(filePath)
     if (response.ok) {
-      await fetchFileList()
+      await getList()
     }
   } catch (error) {
     console.error('删除文件夹失败：', error)
   }
 }
-// 下载所有文件
-const downloadAllFiles = async () => {
-  try {
-    const response = await fetch(`${serverUrl.value}/downloadAll`)
-    const blob = await response.blob()
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'all-files.zip'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
-  } catch (error) {
-    console.error('下载所有文件失败：', error)
-  }
-}
 
 // 删除所有文件
-const deleteAllFiles = async () => {
+const handleDeleteAllFiles = async () => {
   try {
-    const response = await fetch(`${serverUrl.value}/deleteAll`, {
-      method: 'DELETE'
-    })
+    const response = await deleteAllFiles()
     if (response.ok) {
-      await fetchFileList()
+      await getList()
     }
   } catch (error) {
     console.error('删除所有文件失败：', error)
@@ -135,7 +116,7 @@ const deleteAllFiles = async () => {
 
 // 页面加载时获取文件列表
 onMounted(() => {
-  fetchFileList()
+  getList()
 })
 </script>
 
@@ -176,7 +157,7 @@ onMounted(() => {
 
         <!-- 上传按钮和状态 -->
         <div class="flex flex-col items-center">
-          <button @click="uploadFiles"
+          <button @click="handleUploadFiles"
             class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg mb-3"
             :disabled="files.length === 0">
             开始上传
@@ -197,11 +178,11 @@ onMounted(() => {
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold text-gray-800">服务器文件列表</h2>
         <div class="space-x-4">
-          <button @click="downloadAllFiles"
+          <button @click="handleDownloadAllFiles"
             class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg">
             下载所有文件
           </button>
-          <button @click="deleteAllFiles"
+          <button @click="handleDeleteAllFiles"
             class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg">
             删除所有文件
           </button>
@@ -213,7 +194,7 @@ onMounted(() => {
           <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
             <div class="flex items-center">
               <button v-if="file.path"
-                @click="() => { file.type === 'directory' ? downloadDir(file.path) : downloadFile(file.path) }"
+                @click="() => { file.type === 'directory' ? handleDownloadDir(file.path) : handleDownloadFile(file.path) }"
                 class="mr-2 text-blue-500 hover:text-blue-600">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -223,7 +204,7 @@ onMounted(() => {
               <span class="text-gray-700">{{ file.name }}</span>
             </div>
             <button v-if="file.path"
-              @click="() => { file.type === 'directory' ? deleteDir(file.path) : deleteFile(file.path) }"
+              @click="() => { file.type === 'directory' ? handleDeleteDir(file.path) : handleDeleteFile(file.path) }"
               class="text-red-500 hover:text-red-600">
               <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
