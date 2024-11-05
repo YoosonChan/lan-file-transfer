@@ -1,7 +1,7 @@
 export function getIp() {
   const networkInterfaces = require('os').networkInterfaces();
-  let wifiIp: string = '127.0.0.1'
-  let otherIp: string = '127.0.0.1'
+  let wifiIp: string | null = null
+  let otherIp: string | null = null
 
   Object.keys(networkInterfaces).forEach(interfaceName => {
     const interfaces = networkInterfaces[interfaceName];
@@ -19,5 +19,5 @@ export function getIp() {
     });
   });
   // 如果有wifi地址则返回wifi地址，否则返回其他网络地址
-  return wifiIp || otherIp
+  return wifiIp || otherIp || '127.0.0.1'
 }

@@ -124,7 +124,7 @@ onMounted(() => {
   <div class="min-h-screen bg-gray-100 py-8 px-4">
     <div class="max-w-2xl mx-auto">
       <div class="bg-white rounded-lg shadow-md p-6">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6">局域网文件传输</h1>
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">LAN File Transfer</h1>
 
         <!-- 文件上传区域 -->
         <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-6">
@@ -135,15 +135,15 @@ onMounted(() => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
-              <p class="mb-2">点击或拖拽文件到此处</p>
-              <p class="text-sm text-gray-500">支持多个文件上传</p>
+              <p class="mb-2">Click or Drag Files Here</p>
+              <p class="text-sm text-gray-500">Support Multiple Files Upload</p>
             </div>
           </label>
         </div>
 
         <!-- 已选文件列表 -->
         <div v-if="files.length > 0" class="mb-6">
-          <h3 class="text-lg font-semibold mb-3">已选择的文件：</h3>
+          <h3 class="text-lg font-semibold mb-3">Selected Files:</h3>
           <ul class="space-y-2">
             <li v-for="file in files" :key="file.name" class="flex items-center text-gray-700">
               <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,16 +156,16 @@ onMounted(() => {
         </div>
 
         <!-- 上传按钮和状态 -->
-        <div class="flex flex-col items-center">
+        <div v-if="files.length > 0" class="flex flex-col items-center">
           <button @click="handleUploadFiles"
             class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg mb-3"
             :disabled="files.length === 0">
-            开始上传
+            Start Upload
           </button>
           <p v-if="uploadStatus" class="text-sm" :class="{
-            'text-green-600': uploadStatus === '上传成功！',
-            'text-red-600': uploadStatus.includes('错误') || uploadStatus.includes('失败'),
-            'text-blue-600': uploadStatus === '正在上传...'
+            'text-green-600': uploadStatus === 'Upload Success!',
+            'text-red-600': uploadStatus.includes('Error') || uploadStatus.includes('Failed'),
+            'text-blue-600': uploadStatus === 'Uploading...'
           }">
             {{ uploadStatus }}
           </p>
@@ -176,15 +176,15 @@ onMounted(() => {
     <!-- 在上传部分后添加文件列表组件 -->
     <div class="mt-8 bg-white rounded-lg shadow-md p-6">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold text-gray-800">服务器文件列表</h2>
+        <h2 class="text-xl font-bold text-gray-800">Server Files</h2>
         <div class="space-x-4">
           <button @click="handleDownloadAllFiles"
             class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg">
-            下载所有文件
+            Download All Files
           </button>
           <button @click="handleDeleteAllFiles"
             class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg">
-            删除所有文件
+            Delete All Files
           </button>
         </div>
       </div>
