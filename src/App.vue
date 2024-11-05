@@ -1,9 +1,20 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { downloadFileFromResponse } from './utils/download';
+
+interface FileInfo {
+  name: string
+  path?: string
+  type: string
+  size: number
+  createTime: Date
+  children?: FileInfo[]
+}
 
 const files = ref<File[]>([])
 const uploadStatus = ref('')
 const serverUrl = ref(`http://${window.location.hostname}:3000/api`)
+const fileList = ref<FileInfo[]>([])
 
 const handleFileSelect = (event: Event) => {
   const input = event.target as HTMLInputElement
@@ -40,6 +51,74 @@ const uploadFiles = async () => {
     uploadStatus.value = '上传出错：' + error
   }
 }
+
+// 获取文件列表
+const fetchFileList = async () => {
+  try {
+    const response = await fetch(`${serverUrl.value}/files`)
+    if (response.ok) {
+      fileList.value = await response.json()
+    }
+  } catch (error) {
+    console.error('获取文件列表失败：', error)
+  }
+}
+
+// 下载单个文件
+const downloadFile = async (filePath: string) => {
+  downloadFileFromResponse(await fetch(`${serverUrl.value}/download?path=${encodeURIComponent(filePath)}`))
+}
+
+// 删除单个文件
+const deleteFile = async (filePath: string) => {
+  try {
+    const response = await fetch(`${serverUrl.value}/delete?path=${encodeURIComponent(filePath)}`, {
+      method: 'DELETE'
+    })
+    if (response.ok) {
+      await fetchFileList()
+    }
+  } catch (error) {
+    console.error('删除文件失败：', error)
+  }
+}
+
+// 下载所有文件
+const downloadAllFiles = async () => {
+  try {
+    const response = await fetch(`${serverUrl.value}/downloadAll`)
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'all-files.zip'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('下载所有文件失败：', error)
+  }
+}
+
+// 删除所有文件
+const deleteAllFiles = async () => {
+  try {
+    const response = await fetch(`${serverUrl.value}/deleteAll`, {
+      method: 'DELETE'
+    })
+    if (response.ok) {
+      await fetchFileList()
+    }
+  } catch (error) {
+    console.error('删除所有文件失败：', error)
+  }
+}
+
+// 页面加载时获取文件列表
+onMounted(() => {
+  fetchFileList()
+})
 </script>
 
 <template>
@@ -94,5 +173,45 @@ const uploadFiles = async () => {
         </div>
       </div>
     </div>
+
+    <!-- 在上传部分后添加文件列表组件 -->
+    <div class="mt-8 bg-white rounded-lg shadow-md p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-gray-800">服务器文件列表</h2>
+        <div class="space-x-4">
+          <button @click="downloadAllFiles"
+            class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg">
+            下载所有文件
+          </button>
+          <button @click="deleteAllFiles"
+            class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg">
+            删除所有文件
+          </button>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <template v-for="file in fileList" :key="file.path">
+          <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+            <div class="flex items-center">
+              <button v-if="file.path" @click="downloadFile(file.path)" class="mr-2 text-blue-500 hover:text-blue-600">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+              </button>
+              <span class="text-gray-700">{{ file.name }}</span>
+            </div>
+            <button v-if="file.path" @click="deleteFile(file.path)" class="text-red-500 hover:text-red-600">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
+        </template>
+      </div>
+    </div>
+
   </div>
 </template>

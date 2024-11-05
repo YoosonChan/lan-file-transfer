@@ -1,10 +1,10 @@
-import express from 'express';
-import fileUpload from 'express-fileupload';
 import path from 'path';
 import fs from 'fs';
+import express from 'express';
 import cors from 'cors';
-import { getIp } from './utils';
+import fileUpload from 'express-fileupload';
 import router from './routes';
+import { getIp } from './utils/ip';
 
 const app = express();
 const port = 3000;

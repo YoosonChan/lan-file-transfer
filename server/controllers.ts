@@ -1,9 +1,11 @@
 import path from 'path';
 import fs from 'fs';
+import AdmZip from 'adm-zip';
+import { getAllPathFromDir } from './utils/file';
 
 const uploadDir = path.join(__dirname, 'files');
 
-// 文件上传
+// 上传文件
 export function uploadFile(req: any, res: any) {
   try {
     if (!req.files || Object.keys(req.files).length === 0) {
@@ -40,6 +42,7 @@ export function uploadFile(req: any, res: any) {
 
 // 获取文件列表
 export function getFiles(req: any, res: any) {
+  // TODO: 出于安全性，返回字段不应该返回path
   console.log('------req------', req.url);
   try {
     if (!fs.existsSync(uploadDir)) {
@@ -72,6 +75,7 @@ export function getFiles(req: any, res: any) {
           } else {
             structure.push({
               name: prefix + item,
+              path: fullPath.replace(uploadDir, ''),
               type: 'file',
               size: stats.size,
               createTime: stats.birthtime
@@ -89,26 +93,59 @@ export function getFiles(req: any, res: any) {
   }
 }
 
-// 文件下载
+// 下载单个文件
 export function downloadFile(req: any, res: any) {
   try {
-    const filename = req.params.filename;
-    const filePath = path.join(uploadDir, filename);
-
+    const filePath = path.join(uploadDir, req.query.path);
     if (!fs.existsSync(filePath)) {
       console.error(`文件不存在: ${filePath}`);
       return res.status(404).json({ message: '文件不存在' });
     }
-
-    res.download(filePath, (err: any) => {
-      if (err) {
-        console.error('文件下载错误:', err);
-        res.status(500).json({ message: '文件下载失败', error: err.message });
-      }
-    });
+    // header设置
+    res.setHeader('Content-Type', 'application/octet-stream');
+    // 需要设置允许前端读取特定响应头，否则前端的response.headers无法读取Content-Disposition
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+    res.setHeader('Content-Disposition', `attachment; filename="${req.query.path.split('\\').pop()}"`);
+    // 读取文件
+    const fileBuffer = fs.readFileSync(filePath);
+    res.send(fileBuffer);
   } catch (error: any) {
     console.error('下载处理错误:', error);
     res.status(500).json({ message: '文件下载失败', error: error.message });
   }
+}
+
+// 下载所有文件
+export function downloadAllFiles(req: any, res: any) {
+  console.log('------downloadAllFiles------', req.url);
+  const files = getAllPathFromDir(uploadDir)
+  // 遍历并打包当前目录以及子目录下所有文件
+  const zip = new AdmZip();
+  files.forEach(file => {
+    zip.addLocalFile(file);
+  });
+  const zipBuffer = zip.toBuffer();
+  // header设置
+  res.setHeader('Content-Type', 'application/zip');
+  // 需要设置允许前端读取特定响应头，否则前端的response.headers无法读取Content-Disposition
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+  res.setHeader('Content-Disposition', 'attachment; filename=allFiles.zip');
+  // 发送zip文件
+  res.send(zipBuffer);
+}
+
+// 删除单个文件
+export function deleteFile(req: any, res: any) {
+  console.log('------deleting filePath------', req.query.path);
+  const filePath = path.join(uploadDir, req.query.path);
+  fs.unlinkSync(filePath);
+  res.json({ message: '文件删除成功' });
+}
+
+// 删除所有文件
+export function deleteAllFiles(req: any, res: any) {
+  console.log('------deleteAllFiles------', req.url);
+  fs.rmSync(uploadDir, { recursive: true, force: true });
+  res.json({ message: '所有文件删除成功' });
 }
 
