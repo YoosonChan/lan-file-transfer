@@ -2,8 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import AdmZip from 'adm-zip';
 import { getAllPathFromDir } from './utils/file';
-
-const uploadDir = path.join(__dirname, 'files');
+import { uploadDir } from './global';
 
 // 上传文件
 export function uploadFile(req: any, res: any) {
@@ -122,21 +121,24 @@ export function downloadAllFiles(req: any, res: any) {
   // 遍历并打包当前目录以及子目录下所有文件
   const zip = new AdmZip();
   files.forEach(file => {
-    zip.addLocalFile(file);
+    if (file.type === 'directory') {
+      zip.addLocalFolder(file.fullPath, file.path);
+    } else {
+      zip.addLocalFile(file.fullPath, file.path);
+    }
   });
   const zipBuffer = zip.toBuffer();
   // header设置
   res.setHeader('Content-Type', 'application/zip');
   // 需要设置允许前端读取特定响应头，否则前端的response.headers无法读取Content-Disposition
   res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
-  res.setHeader('Content-Disposition', 'attachment; filename=allFiles.zip');
+  res.setHeader('Content-Disposition', `attachment; filename=all_files_${new Date().getTime()}.zip`);
   // 发送zip文件
   res.send(zipBuffer);
 }
 
 // 删除单个文件
 export function deleteFile(req: any, res: any) {
-  console.log('------deleting filePath------', req.query.path);
   const filePath = path.join(uploadDir, req.query.path);
   fs.unlinkSync(filePath);
   res.json({ message: '文件删除成功' });

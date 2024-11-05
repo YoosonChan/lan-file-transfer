@@ -44,6 +44,7 @@ const uploadFiles = async () => {
     if (response.ok) {
       uploadStatus.value = '上传成功！'
       files.value = []
+      await fetchFileList()
     } else {
       uploadStatus.value = '上传失败'
     }
