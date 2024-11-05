@@ -1,6 +1,7 @@
+import { uploadDir } from '../global';
 import fs from 'fs';
 import path from 'path';
-import { uploadDir } from '../global';
+import AdmZip from 'adm-zip';
 interface FileItem {
   path: string;
   fullPath: string;
@@ -21,4 +22,17 @@ export function getAllPathFromDir(dirPath: string, rootPath = uploadDir) {
     }
   });
   return paths;
+}
+
+export function zipFiles(files: FileItem[]) {
+  // 遍历并打包当前目录以及子目录下所有文件
+  const zip = new AdmZip();
+  files.forEach(file => {
+    if (file.type === 'directory') {
+      zip.addLocalFolder(file.fullPath, file.path);
+    } else {
+      zip.addLocalFile(file.fullPath, file.path);
+    }
+  });
+  return zip.toBuffer();
 }

@@ -1,4 +1,4 @@
-# LAN file transfer
+# LAN File Transfer
 
 ## Frontend
 

@@ -212,7 +212,7 @@ onMounted(() => {
         <template v-for="file in fileList" :key="file.path">
           <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
             <div class="flex items-center">
-              <button v-if="file.path && file.type === 'file'"
+              <button v-if="file.path"
                 @click="() => { file.type === 'directory' ? downloadDir(file.path) : downloadFile(file.path) }"
                 class="mr-2 text-blue-500 hover:text-blue-600">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
