@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { deleteAllFiles, deleteFile, downloadAllFiles, downloadFile, getFiles, uploadFile } from './controllers';
+import { deleteAllFiles, deleteDir, deleteFile, downloadAllFiles, downloadFile, getFiles, uploadFile } from './controllers';
 
 const router = Router();
 
@@ -9,10 +9,14 @@ router.get('/files', getFiles);
 router.post('/upload', uploadFile);
 // 下载单个文件接口
 router.get('/download', downloadFile);
+// 下载单个文件夹接口
+// router.get('/downloadDir', downloadDir);
 // 下载所有文件接口
 router.get('/downloadAll', downloadAllFiles);
 // 删除单个文件接口
 router.delete('/delete', deleteFile);
+// 删除单个文件夹接口
+router.delete('/deleteDir', deleteDir);
 // 删除所有文件接口
 router.delete('/deleteAll', deleteAllFiles);
 

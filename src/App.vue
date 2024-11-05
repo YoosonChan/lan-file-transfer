@@ -4,8 +4,8 @@ import { downloadFileFromResponse } from './utils/download';
 
 interface FileInfo {
   name: string
-  path?: string
-  type: string
+  path: string
+  type: 'directory' | 'file'
   size: number
   createTime: Date
   children?: FileInfo[]
@@ -69,6 +69,10 @@ const fetchFileList = async () => {
 const downloadFile = async (filePath: string) => {
   downloadFileFromResponse(await fetch(`${serverUrl.value}/download?path=${encodeURIComponent(filePath)}`))
 }
+// 下载单个文件夹
+const downloadDir = async (filePath: string) => {
+  downloadFileFromResponse(await fetch(`${serverUrl.value}/downloadDir?path=${encodeURIComponent(filePath)}`))
+}
 
 // 删除单个文件
 const deleteFile = async (filePath: string) => {
@@ -84,6 +88,19 @@ const deleteFile = async (filePath: string) => {
   }
 }
 
+// 删除单个文件夹
+const deleteDir = async (filePath: string) => {
+  try {
+    const response = await fetch(`${serverUrl.value}/deleteDir?path=${encodeURIComponent(filePath)}`, {
+      method: 'DELETE'
+    })
+    if (response.ok) {
+      await fetchFileList()
+    }
+  } catch (error) {
+    console.error('删除文件夹失败：', error)
+  }
+}
 // 下载所有文件
 const downloadAllFiles = async () => {
   try {
@@ -195,7 +212,9 @@ onMounted(() => {
         <template v-for="file in fileList" :key="file.path">
           <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
             <div class="flex items-center">
-              <button v-if="file.path" @click="downloadFile(file.path)" class="mr-2 text-blue-500 hover:text-blue-600">
+              <button v-if="file.path && file.type === 'file'"
+                @click="() => { file.type === 'directory' ? downloadDir(file.path) : downloadFile(file.path) }"
+                class="mr-2 text-blue-500 hover:text-blue-600">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -203,7 +222,9 @@ onMounted(() => {
               </button>
               <span class="text-gray-700">{{ file.name }}</span>
             </div>
-            <button v-if="file.path" @click="deleteFile(file.path)" class="text-red-500 hover:text-red-600">
+            <button v-if="file.path"
+              @click="() => { file.type === 'directory' ? deleteDir(file.path) : deleteFile(file.path) }"
+              class="text-red-500 hover:text-red-600">
               <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

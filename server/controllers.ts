@@ -67,6 +67,7 @@ export function getFiles(req: any, res: any) {
             structure.push({
               name: '📁 ' + item,
               type: 'directory',
+              path: fullPath.replace(uploadDir, ''),
               size: 0,
               createTime: stats.birthtime,
               children: getDirectoryStructure(fullPath)
@@ -142,6 +143,13 @@ export function deleteFile(req: any, res: any) {
   const filePath = path.join(uploadDir, req.query.path);
   fs.unlinkSync(filePath);
   res.json({ message: '文件删除成功' });
+}
+
+// 删除单个文件夹
+export function deleteDir(req: any, res: any) {
+  const dirPath = path.join(uploadDir, req.query.path);
+  fs.rmSync(dirPath, { recursive: true, force: true });
+  res.json({ message: '文件夹删除成功' });
 }
 
 // 删除所有文件
