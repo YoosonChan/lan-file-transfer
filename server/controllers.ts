@@ -104,7 +104,8 @@ export function downloadFile(req: any, res: any) {
     res.setHeader('Content-Type', 'application/octet-stream');
     // 需要设置允许前端读取特定响应头，否则前端的response.headers无法读取Content-Disposition
     res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
-    res.setHeader('Content-Disposition', `attachment; filename="${req.query.path.split('\\').pop()}"`);
+    // 存在字符编码兼容问题, 需要encodeURIComponent
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(req.query.path.split('\\').pop())}"`);
     // 读取文件
     const fileBuffer = fs.readFileSync(filePath);
     res.send(fileBuffer);
@@ -130,7 +131,8 @@ export function downloadDir(req: any, res: any) {
     res.setHeader('Content-Type', 'application/zip');
     // 需要设置允许前端读取特定响应头，否则前端的response.headers无法读取Content-Disposition
     res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
-    res.setHeader('Content-Disposition', `attachment; filename=${req.query.path.split('\\').pop()}.zip`);
+    // 存在字符编码兼容问题, 需要encodeURIComponent
+    res.setHeader('Content-Disposition', `attachment; filename=${encodeURIComponent(req.query.path.split('\\').pop())}.zip`);
     // 发送zip文件
     res.send(zipBuffer);
   } catch (error: any) {

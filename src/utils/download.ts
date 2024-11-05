@@ -1,12 +1,12 @@
 const getFileNameFromHeader = (headers: Response['headers']) => {
   const contentDisposition = headers.get('Content-Disposition')
-  const filename = /[\w\s]+\.[a-zA-Z]+/g.exec(contentDisposition ?? '')?.[0]
-  return filename ?? ''
+  // 存在字符编码兼容报错问题, 解决方案：通过后端encodeURIComponent, 然后前端decodeURIComponent
+  const filename = /[\w%]+\.[a-zA-Z]+/g.exec(contentDisposition ?? '')?.[0]
+  return decodeURIComponent(filename ?? '')
 }
 
 export async function downloadFileFromResponse(response: Response, _filename?: string) {
   const filename = getFileNameFromHeader(response.headers)
-  console.log('------filename------', filename);
   const blob = await response.blob()
   const url = window.URL.createObjectURL(blob)
   const a = document.createElement('a')
