@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import cors from 'cors';
 import { getIp } from './utils';
+import router from './routes';
 
 const app = express();
 const port = 3000;
@@ -16,7 +17,6 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
 }
 app.use(express.static(uploadDir));
-
 // 添加 express-fileupload 中间件
 app.use(fileUpload({
   createParentPath: true,
@@ -24,8 +24,8 @@ app.use(fileUpload({
     fileSize: 50 * 1024 * 1024 // 50MB 最大限制
   }
 }));
-
-
+// 使用路由
+app.use('/api', router);
 // 启动服务器
 app.listen(port, getIp(), (err?: Error) => {
   if (err) {

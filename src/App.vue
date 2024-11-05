@@ -3,7 +3,7 @@ import { ref } from 'vue'
 
 const files = ref<File[]>([])
 const uploadStatus = ref('')
-const serverUrl = ref(`http://${window.location.hostname}:3000`)
+const serverUrl = ref(`http://${window.location.hostname}:3000/api`)
 
 const handleFileSelect = (event: Event) => {
   const input = event.target as HTMLInputElement
