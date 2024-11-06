@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { FileItem } from './types';
 import { deleteAllFiles, deleteDir, deleteFile, downloadAllFiles, downloadDir, downloadFile, getFileList, uploadFile } from './api';
 import { downloadFileFromResponse } from './utils/download';
-import { FileItem } from './types';
+import LanguageSelector from './components/LanguageSelector.vue'
+const { t } = useI18n()
 
 // 文件列表
 const fileList = ref<FileItem[]>([])
@@ -13,7 +16,7 @@ const getList = async () => {
       fileList.value = await response.json()
     }
   } catch (error) {
-    console.error('获取文件列表失败：', error)
+    console.error(t('errors.fileList'), error)
   }
 }
 
@@ -28,7 +31,7 @@ const handleFileSelect = (event: Event) => {
 }
 const handleUploadFiles = async () => {
   if (files.value.length === 0) {
-    uploadStatus.value = '请选择文件'
+    uploadStatus.value = t('upload.status.select')
     return
   }
   const formData = new FormData()
@@ -36,17 +39,17 @@ const handleUploadFiles = async () => {
     formData.append('files', file)
   })
   try {
-    uploadStatus.value = '正在上传...'
+    uploadStatus.value = t('upload.status.uploading')
     const response = await uploadFile(formData)
     if (response.ok) {
-      uploadStatus.value = '上传成功！'
+      uploadStatus.value = t('upload.status.success')
       files.value = []
       await getList()
     } else {
-      uploadStatus.value = '上传失败'
+      uploadStatus.value = t('upload.status.error')
     }
   } catch (error) {
-    uploadStatus.value = '上传出错：' + error
+    uploadStatus.value = t('upload.status.error') + error
   }
 }
 
@@ -56,7 +59,7 @@ const handleDownloadFile = async (filePath: string) => {
   try {
     downloadFileFromResponse(await downloadFile(filePath))
   } catch (error) {
-    console.error('下载文件失败：', error)
+    console.error(t('errors.download.file'), error)
   }
 }
 
@@ -65,7 +68,7 @@ const handleDownloadDir = async (filePath: string) => {
   try {
     downloadFileFromResponse(await downloadDir(filePath))
   } catch (error) {
-    console.error('下载文件夹失败：', error)
+    console.error(t('errors.download.directory'), error)
   }
 }
 
@@ -74,7 +77,7 @@ const handleDownloadAllFiles = async () => {
   try {
     downloadFileFromResponse(await downloadAllFiles())
   } catch (error) {
-    console.error('下载所有文件失败：', error)
+    console.error(t('errors.download.all'), error)
   }
 }
 
@@ -86,7 +89,7 @@ const handleDeleteFile = async (filePath: string) => {
       await getList()
     }
   } catch (error) {
-    console.error('删除文件失败：', error)
+    console.error(t('errors.delete.file'), error)
   }
 }
 
@@ -98,7 +101,7 @@ const handleDeleteDir = async (filePath: string) => {
       await getList()
     }
   } catch (error) {
-    console.error('删除文件夹失败：', error)
+    console.error(t('errors.delete.directory'), error)
   }
 }
 
@@ -110,7 +113,7 @@ const handleDeleteAllFiles = async () => {
       await getList()
     }
   } catch (error) {
-    console.error('删除所有文件失败：', error)
+    console.error(t('errors.delete.all'), error)
   }
 }
 
@@ -124,7 +127,10 @@ onMounted(() => {
   <div class="min-h-screen bg-gray-100 py-8 px-4">
     <div class="max-w-2xl mx-auto">
       <div class="bg-white rounded-lg shadow-md p-6">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6">LAN File Transfer</h1>
+        <div class="flex justify-between items-center mb-6">
+          <h1 class="text-2xl font-bold text-gray-800">{{ t('title') }}</h1>
+          <LanguageSelector />
+        </div>
 
         <!-- 文件上传区域 -->
         <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-6">
@@ -135,15 +141,15 @@ onMounted(() => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
-              <p class="mb-2">Click or Drag Files Here</p>
-              <p class="text-sm text-gray-500">Support Multiple Files Upload</p>
+              <p class="mb-2">{{ t('upload.dropzone.title') }}</p>
+              <p class="text-sm text-gray-500">{{ t('upload.dropzone.subtitle') }}</p>
             </div>
           </label>
         </div>
 
         <!-- 已选文件列表 -->
         <div v-if="files.length > 0" class="mb-6">
-          <h3 class="text-lg font-semibold mb-3">Selected Files:</h3>
+          <h3 class="text-lg font-semibold mb-3">{{ t('upload.selectedFiles') }}</h3>
           <ul class="space-y-2">
             <li v-for="file in files" :key="file.name" class="flex items-center text-gray-700">
               <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,12 +166,12 @@ onMounted(() => {
           <button @click="handleUploadFiles"
             class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg mb-3"
             :disabled="files.length === 0">
-            Start Upload
+            {{ t('upload.startUpload') }}
           </button>
           <p v-if="uploadStatus" class="text-sm" :class="{
-            'text-green-600': uploadStatus === 'Upload Success!',
-            'text-red-600': uploadStatus.includes('Error') || uploadStatus.includes('Failed'),
-            'text-blue-600': uploadStatus === 'Uploading...'
+            'text-green-600': uploadStatus === t('upload.status.success'),
+            'text-red-600': uploadStatus.includes(t('upload.status.error')) || uploadStatus.includes('Failed'),
+            'text-blue-600': uploadStatus === t('upload.status.uploading')
           }">
             {{ uploadStatus }}
           </p>
@@ -176,15 +182,15 @@ onMounted(() => {
     <!-- 在上传部分后添加文件列表组件 -->
     <div class="mt-8 bg-white rounded-lg shadow-md p-6">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold text-gray-800">Server Files</h2>
+        <h2 class="text-xl font-bold text-gray-800">{{ t('serverFiles.title') }}</h2>
         <div class="space-x-4">
           <button @click="handleDownloadAllFiles"
             class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg">
-            Download All Files
+            {{ t('serverFiles.downloadAll') }}
           </button>
           <button @click="handleDeleteAllFiles"
             class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg">
-            Delete All Files
+            {{ t('serverFiles.deleteAll') }}
           </button>
         </div>
       </div>
