@@ -1,7 +1,7 @@
 const getFileNameFromHeader = (headers: Response['headers']) => {
   const contentDisposition = headers.get('Content-Disposition')
   // 存在字符编码兼容报错问题, 解决方案：通过后端encodeURIComponent, 然后前端decodeURIComponent
-  const filename = /[\w%]+\.[a-zA-Z]+/g.exec(contentDisposition ?? '')?.[0]
+  const filename = /[\w%]+\.[\w]+/g.exec(contentDisposition ?? '')?.[0]
   return decodeURIComponent(filename ?? '')
 }
 
